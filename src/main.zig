@@ -23,6 +23,7 @@ const Mark = struct { // sorted
 const Buffer = struct {
     next_buffer: *Buffer, // circular list
     buffer_name: *const []u8,
+    buffer_id: u8,
 
     point: Location,
 
@@ -39,30 +40,85 @@ const Buffer = struct {
     is_modified: bool,
 
     mode_list: *Mode,
+
+    const Self = @This();
+
+    pub fn init(name: *const []u8) Buffer {
+        return Buffer{
+            // .next_buffer = ?
+            .buffer_name = name,
+
+            // ...
+
+        };
+    }
 };
 
 const World = struct {
     buffer_chain: *Buffer,
-    active_buffer: Buffer,
-};
+    active_buffer: *Buffer,
 
-const Editor = struct {
-    world: World,
+    initialized: bool,
 
-    // World
-    pub fn initWorld() Status {} // creates scratch buffer
-    pub fn closeWorld() Status {} // cannot be called until after init()
-    pub fn saveWorld() Status {} // saves all state to a file
-    pub fn loadWorld() Status {} // loads all state to a file
+    const Self = @This();
+
+    pub fn init(self: Self) Status {
+        self.buffer_chain = Buffer.init("--SCRATCH--");
+        self.active_buffer = self.buffer_chain;
+
+        self.initialized = true;
+
+        return true;
+    }
+
+    pub fn close(self: Self) Status {
+        if (!self.initialized) {
+            // loop through all buffers and remove all but --SCRATCH--
+
+            return false;
+        }
+
+        return true;
+    }
+
+    pub fn save(self: Self) Status {
+        // save editor specific state to file
+
+        _ = self;
+    }
+
+    pub fn load(self: Self) Status {
+        // load editor specific state from file
+
+        _ = self;
+    }
 
     // Buffer
     pub fn createBuffer(name: *const []u8) Status {}
+
     pub fn clearBuffer(name: *const []u8) Status {} // removes all characters and marks
+
     pub fn deleteBuffer(name: *const []u8) Status {}
+
     pub fn setCurrentBuffer(name: *const []u8) Status {}
-    pub fn nextBuffer() *const []u8 {}
-    pub fn setBufferName(name: *const []u8) Status {}
-    pub fn getBufferName() *const []u8 {}
+
+    pub fn nextBuffer(self: Self) *const []u8 {
+        self.active_buffer = self.active_buffer.next_buffer;
+
+        return self.getBufferName();
+    }
+
+    pub fn setBufferName(self: Self, name: *const []u8) Status {
+        // check if name exists already
+
+        self.active_buffer.buffer_name = name;
+
+        return true;
+    }
+
+    pub fn getBufferName(self: Self) *const []u8 {
+        return self.active_buffer.buffer_name;
+    }
 
     // Point
     pub fn setPoint(location: Location) Status {}
